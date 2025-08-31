@@ -22,7 +22,7 @@ This guide explains how to deploy the 7secs2 Casino application using Portainer 
    - Repository reference: main
    - Compose file path: docker-compose.yml
 5. Click "Deploy the stack"
-6. Once deployed, access the application at http://YOUR_SERVER_IP:8501
+6. Once deployed, access the application at http://YOUR_SERVER_IP:7777
 
 ### Option 2: Manual Deployment
 
@@ -38,7 +38,7 @@ This guide explains how to deploy the 7secs2 Casino application using Portainer 
    ```
    docker-compose up -d
    ```
-4. Access the application at http://YOUR_SERVER_IP:8501
+4. Access the application at http://YOUR_SERVER_IP:7777
 
 ## Configuration
 

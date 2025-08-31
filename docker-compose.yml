@@ -11,7 +11,7 @@ services:
     volumes:
       - ./:/app
     ports:
-      - "8501:8501"
+      - "7777:8501"
     environment:
       - STREAMLIT_SERVER_ENABLE_CORS=false
       - STREAMLIT_SERVER_HEADLESS=true
@@ -28,3 +28,4 @@ services:
 # 7. Set the reference to "main" branch
 # 8. Set the compose file path to "docker-compose.yml"
 # 9. Click "Deploy the stack"
+# 10. Access the application at http://YOUR_SERVER_IP:7777
