@@ -1,0 +1,33 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run Streamlit (venv)",
+			"type": "shell",
+			"command": "${workspaceFolder}\\venv\\Scripts\\python.exe",
+			"args": [
+				"-m",
+				"streamlit",
+				"run",
+				"streamlit_app/app.py"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$eslint-stylish"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Open Streamlit (browser)",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"Start-Process http://localhost:8501"
+			],
+			"isBackground": false,
+			"group": "build"
+		}
+	]
+}

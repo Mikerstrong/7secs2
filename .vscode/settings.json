@@ -1,0 +1,10 @@
+{
+    // Keep existing environment plugin settings
+    "python-envs.defaultEnvManager": "ms-python.python:system",
+    "python-envs.pythonProjects": [],
+
+    // Always use this workspace venv
+    "python.defaultInterpreterPath": "${workspaceFolder}\\venv\\Scripts\\python.exe",
+    // Activate the environment for terminals started by Python extension
+    "python.terminal.activateEnvironment": true
+}
