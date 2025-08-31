@@ -373,9 +373,9 @@ def play_slots(user_state, lines, ap_per_line, jackpot, house, st):
             user_state["AP"] -= float(total_bet)
 
             # Schedule and lock auto-refresh for the duration
-            animation_duration = random.uniform(4.0, 7.0)
-            if quick_spin:  # Shorter animation if quick spin is enabled
-                animation_duration = random.uniform(1.5, 3.0)
+            animation_duration = random.uniform(2.0, 4.0)  # Reduced animation time
+            if quick_spin:  # Even shorter animation if quick spin is enabled
+                animation_duration = random.uniform(0.8, 1.5)
                 
             end_ts = time.time() + animation_duration
             sstate["spin_in_progress"] = True
@@ -386,6 +386,9 @@ def play_slots(user_state, lines, ap_per_line, jackpot, house, st):
             sstate["bet_ap_per_line"] = int(ap_per_line)
             sstate["auto_spins"] = int(auto_spins)
             sstate["quick_spin"] = quick_spin
+            
+            # Generate final grid result in advance
+            sstate["final_grid"] = [[random.choice(slot_emojis) for _ in range(grid_size)] for _ in range(grid_size)]
             
             # Pause header auto-refresh while spinning
             st.session_state["lock_auto_refresh_until"] = end_ts + 0.5
@@ -463,9 +466,7 @@ def play_slots(user_state, lines, ap_per_line, jackpot, house, st):
         status_message = st.empty()
         status_message.markdown('<h3 style="text-align:center;color:#f39c12;">🎰 SPINNING... 🎰</h3>', unsafe_allow_html=True)
         
-        # Instead of a while loop that causes infinite page refreshes,
-        # we'll use a single animation frame and rely on Streamlit's rerun
-        # Check if we need to continue animation
+        # Simplified animation approach that's more compatible with containerized environments
         current_time = time.time()
         if current_time < end_ts:
             # Update progress bar
@@ -475,28 +476,44 @@ def play_slots(user_state, lines, ap_per_line, jackpot, house, st):
             
             # Generate animation frame with a "settling" effect
             animation_grid = []
+            grid_size = sstate.get("anim_grid_size", 3)
+            
+            # Make sure we have a final grid
+            if "final_grid" not in sstate:
+                sstate["final_grid"] = [[random.choice(slot_emojis) for _ in range(grid_size)] for _ in range(grid_size)]
+                
             for row_idx in range(grid_size):
                 row = []
                 for col_idx in range(grid_size):
                     # Create a settling effect - columns from left to right stop spinning first
-                    if progress > 0.5 + (col_idx * 0.15):
+                    if progress > 0.4 + (col_idx * 0.15):
                         # For columns settled, use stable symbols
-                        if "final_grid" not in sstate:
-                            sstate["final_grid"] = [[random.choice(slot_emojis) for _ in range(grid_size)] for _ in range(grid_size)]
                         row.append(sstate["final_grid"][row_idx][col_idx])
                     else:
                         # For columns still spinning, use random symbols
                         row.append(random.choice(slot_emojis))
                 animation_grid.append(row)
                 
-            # Keep animation going with a short delay
-            time.sleep(0.1)
-            st.rerun()
+            # Shorter delay for Docker compatibility
+            time.sleep(0.05)
             
             # Show the animation frame with a more casino-like presentation
             with slot_placeholder.container():
-                if progress > 0.9:
+                # Render animation frame
+                _render_grid(animation_grid)
+                
+                if progress > 0.8:
                     status_message.markdown('<h3 style="text-align:center;color:#e74c3c;">🎰 ALMOST THERE... 🎰</h3>', unsafe_allow_html=True)
+                    
+            # Continue animation
+            try:
+                st.rerun()
+            except:
+                # Fallback for older Streamlit versions
+                try:
+                    st.experimental_rerun()
+                except:
+                    pass
                 
                 # Add lighting effects that intensify as we approach the end
                 glow_intensity = min(20, int(progress * 30))
@@ -537,12 +554,17 @@ def play_slots(user_state, lines, ap_per_line, jackpot, house, st):
             frame_count += 1
             time.sleep(delay)
         
-        # Clear the progress bar
+        # Animation is complete - show final result
+        progress_bar.progress(1.0)
+        status_message.markdown('<h3 style="text-align:center;color:#2ecc71;">🎰 SPIN COMPLETE! 🎰</h3>', unsafe_allow_html=True)
+        
+        # Clear the progress bar after a brief pause
+        time.sleep(0.5)
         progress_bar.empty()
         status_message.empty()
 
         # Finalize spin
-        grid = [[random.choice(slot_emojis) for _ in range(grid_size)] for _ in range(grid_size)]
+        grid = sstate.get("final_grid", [[random.choice(slot_emojis) for _ in range(grid_size)] for _ in range(grid_size)])
 
         total_payout = 0.0
         win_lines = []
