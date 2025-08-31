@@ -109,13 +109,24 @@ def _render_grid(grid, highlight_lines=None):
     # Close the slot machine container
     grid_html += "".join(rows) + "</div>"
     
-    # Add CSS for animations
+    # Add CSS for animations - enhanced for better visualization
     css = """
     <style>
     @keyframes pulse {
         0% { transform: scale(1); }
         50% { transform: scale(1.1); box-shadow: 0 0 15px gold; }
         100% { transform: scale(1); }
+    }
+    @keyframes spin {
+        0% { transform: rotateY(0deg); }
+        100% { transform: rotateY(360deg); }
+    }
+    @keyframes flash {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+    .slot-symbol-spinning {
+        animation: spin 0.5s linear infinite, flash 1s infinite;
     }
     .slots-container {
         background: linear-gradient(to bottom, #1a1a2e, #16213e);
@@ -406,6 +417,8 @@ def play_slots(user_state, lines, ap_per_line, jackpot, house, st):
 
     # If a spin is in progress, run the animation to completion and resolve the result
     if sstate.get("spin_in_progress"):
+        # Force a small delay to ensure consistent animation frames
+        time.sleep(0.05)
         # Create a fixed 3x3 slot layout container
         st.markdown("""
         <div style="
@@ -490,8 +503,10 @@ def play_slots(user_state, lines, ap_per_line, jackpot, house, st):
                         # For columns settled, use stable symbols
                         row.append(sstate["final_grid"][row_idx][col_idx])
                     else:
-                        # For columns still spinning, use random symbols
-                        row.append(random.choice(slot_emojis))
+                        # For columns still spinning, use random symbols with a spinning CSS class
+                        symbol = random.choice(slot_emojis)
+                        # We'll wrap spinning symbols in a span with our animation class
+                        row.append(f"<span class='slot-symbol-spinning'>{symbol}</span>")
                 animation_grid.append(row)
                 
             # Shorter delay for Docker compatibility
@@ -499,11 +514,27 @@ def play_slots(user_state, lines, ap_per_line, jackpot, house, st):
             
             # Show the animation frame with a more casino-like presentation
             with slot_placeholder.container():
+                # Enhanced visual effects for the animation frame
+                st.markdown(f'''
+                <div class="spinning-animation" style="
+                    animation: glow {0.5 + progress}s infinite alternate;
+                    box-shadow: 0 0 {5 + int(progress * 15)}px gold;
+                    transition: all 0.3s ease;
+                    padding: 10px;
+                    border-radius: 10px;
+                ">
+                ''', unsafe_allow_html=True)
+                
                 # Render animation frame
-                _render_grid(animation_grid)
+                st.markdown(_render_grid(animation_grid), unsafe_allow_html=True)
+                st.markdown('</div>', unsafe_allow_html=True)
                 
                 if progress > 0.8:
                     status_message.markdown('<h3 style="text-align:center;color:#e74c3c;">🎰 ALMOST THERE... 🎰</h3>', unsafe_allow_html=True)
+                elif progress > 0.5:
+                    status_message.markdown('<h3 style="text-align:center;color:#f39c12;">🎰 SPINNING... 🎰</h3>', unsafe_allow_html=True)
+                else:
+                    status_message.markdown('<h3 style="text-align:center;color:#3498db;">🎰 SPINNING... 🎰</h3>', unsafe_allow_html=True)
                     
             # Continue animation
             try:

@@ -2,10 +2,7 @@
 # Contains functions for each game logic: slots, blackjack, roulette, craps, etc.
 
 import random
-
-def play_slots(user_state, lines, ap_per_line, jackpot, house):
-    # ...existing slots logic...
-    pass
+from slots import play_slots
 
 def play_blackjack(user_state, bj_state):
     # ...existing blackjack logic...
