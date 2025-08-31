@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  casino-app:
+    image: python:3.10-slim
+    container_name: 7secs2-casino
+    working_dir: /app
+    command: >
+      bash -c "pip install -r requirements.txt &&
+               python -m streamlit run streamlit_app/app.py --server.port=8501 --server.address=0.0.0.0"
+    volumes:
+      - ./:/app
+    ports:
+      - "8501:8501"
+    environment:
+      - STREAMLIT_SERVER_ENABLE_CORS=false
+      - STREAMLIT_SERVER_HEADLESS=true
+      - STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
+    restart: unless-stopped
+
+# To deploy this application using Portainer:
+# 1. Open Portainer
+# 2. Go to Stacks
+# 3. Click "Add stack"
+# 4. Name your stack (e.g., "7secs2-casino")
+# 5. Under "Build method", select "Repository"
+# 6. Enter your GitHub repository URL: https://github.com/Mikerstrong/7secs2.git
+# 7. Set the reference to "main" branch
+# 8. Set the compose file path to "docker-compose.yml"
+# 9. Click "Deploy the stack"
