@@ -2,16 +2,18 @@ version: '3.8'
 
 services:
   casino-app:
-    image: python:3.10-slim
+    build: .
     container_name: 7secs2-casino
     working_dir: /app
     command: >
-      bash -c "pip install -r requirements.txt &&
+      bash -c "pip install --no-cache-dir streamlit>=1.33 streamlit-autorefresh>=1.0.1 &&
                python -m streamlit run streamlit_app/app.py --server.port=8501 --server.address=0.0.0.0"
     volumes:
-      - ./:/app
+      - type: bind
+        source: .
+        target: /app
     ports:
-      - "7777:8501"
+      - "${EXTERNAL_PORT:-7777}:${INTERNAL_PORT:-8501}"
     environment:
       - STREAMLIT_SERVER_ENABLE_CORS=false
       - STREAMLIT_SERVER_HEADLESS=true

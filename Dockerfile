@@ -1,15 +1,12 @@
-FROM python:3.10-alpine
+FROM python:3.10-slim
 
 WORKDIR /app
 
-# Install build dependencies
-RUN apk add --no-cache --virtual .build-deps gcc musl-dev
+# Install required packages directly
+RUN pip install --no-cache-dir streamlit>=1.33 streamlit-autorefresh>=1.0.1
 
-# Copy requirements first to leverage Docker cache
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy the rest of the application
+# Copy the application files
+# No need for requirements.txt as we've installed dependencies directly
 COPY . .
 
 # Expose the port Streamlit runs on
