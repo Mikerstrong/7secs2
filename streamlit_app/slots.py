@@ -117,6 +117,13 @@ def _render_grid(grid, highlight_lines=None):
         50% { transform: scale(1.1); box-shadow: 0 0 15px gold; }
         100% { transform: scale(1); }
     }
+    @keyframes spin3D {
+        0% { transform: rotateY(0deg) rotateX(0deg); }
+        25% { transform: rotateY(90deg) rotateX(10deg); }
+        50% { transform: rotateY(180deg) rotateX(0deg); }
+        75% { transform: rotateY(270deg) rotateX(-10deg); }
+        100% { transform: rotateY(360deg) rotateX(0deg); }
+    }
     @keyframes spin {
         0% { transform: rotateY(0deg); }
         100% { transform: rotateY(360deg); }
@@ -125,8 +132,15 @@ def _render_grid(grid, highlight_lines=None):
         0%, 100% { opacity: 1; }
         50% { opacity: 0.5; }
     }
+    @keyframes blur {
+        0%, 100% { filter: blur(0px); }
+        50% { filter: blur(1px); }
+    }
     .slot-symbol-spinning {
-        animation: spin 0.5s linear infinite, flash 1s infinite;
+        animation: spin3D 0.3s linear infinite, flash 0.8s infinite, blur 0.5s infinite;
+        perspective: 1000px;
+        display: inline-block;
+        transform-style: preserve-3d;
     }
     .slots-container {
         background: linear-gradient(to bottom, #1a1a2e, #16213e);
@@ -384,9 +398,9 @@ def play_slots(user_state, lines, ap_per_line, jackpot, house, st):
             user_state["AP"] -= float(total_bet)
 
             # Schedule and lock auto-refresh for the duration
-            animation_duration = random.uniform(2.0, 4.0)  # Reduced animation time
-            if quick_spin:  # Even shorter animation if quick spin is enabled
-                animation_duration = random.uniform(0.8, 1.5)
+            animation_duration = random.uniform(5.0, 7.0)  # Longer animation time for better effect
+            if quick_spin:  # Shorter animation if quick spin is enabled
+                animation_duration = random.uniform(2.0, 3.0)
                 
             end_ts = time.time() + animation_duration
             sstate["spin_in_progress"] = True
@@ -495,44 +509,104 @@ def play_slots(user_state, lines, ap_per_line, jackpot, house, st):
             if "final_grid" not in sstate:
                 sstate["final_grid"] = [[random.choice(slot_emojis) for _ in range(grid_size)] for _ in range(grid_size)]
                 
+            # Create more dramatic settling effect
+            settling_threshold = 0.65  # Symbols settle later in the animation
+            
             for row_idx in range(grid_size):
                 row = []
                 for col_idx in range(grid_size):
                     # Create a settling effect - columns from left to right stop spinning first
-                    if progress > 0.4 + (col_idx * 0.15):
-                        # For columns settled, use stable symbols
-                        row.append(sstate["final_grid"][row_idx][col_idx])
+                    # Add randomness to make it look more natural
+                    col_settle_point = settling_threshold + (col_idx * 0.1) + (random.random() * 0.05)
+                    
+                    if progress > col_settle_point:
+                        # For columns settled, use stable symbols with a slight pulse effect
+                        symbol = sstate["final_grid"][row_idx][col_idx]
+                        # Add slight emphasis when symbol just settled (within 0.1 progress)
+                        if progress < col_settle_point + 0.1:
+                            row.append(f"<span style='transform:scale(1.1);transition:all 0.2s;text-shadow:0 0 5px gold;'>{symbol}</span>")
+                        else:
+                            row.append(symbol)
                     else:
-                        # For columns still spinning, use random symbols with a spinning CSS class
+                        # For columns still spinning, use random symbols with enhanced spinning CSS class
                         symbol = random.choice(slot_emojis)
-                        # We'll wrap spinning symbols in a span with our animation class
-                        row.append(f"<span class='slot-symbol-spinning'>{symbol}</span>")
+                        spin_speed = 0.3 - (progress * 0.1)  # Gradually slow down the spinning
+                        # We'll wrap spinning symbols in a span with our animation class and dynamic speed
+                        row.append(f"<span class='slot-symbol-spinning' style='animation-duration:{spin_speed}s, 0.8s, 0.5s'>{symbol}</span>")
                 animation_grid.append(row)
                 
-            # Shorter delay for Docker compatibility
-            time.sleep(0.05)
+            # Variable delay for more realistic animation timing
+            # Faster at the beginning, slower towards the end for dramatic effect
+            if progress < 0.3:
+                # Fast spinning at the start
+                delay = 0.03
+            elif progress < 0.6:
+                # Medium speed in the middle
+                delay = 0.05
+            elif progress < 0.85:
+                # Slower as we approach the end
+                delay = 0.08
+            else:
+                # Very slow at the final moments for suspense
+                delay = 0.12
+                
+            time.sleep(delay)
             
             # Show the animation frame with a more casino-like presentation
             with slot_placeholder.container():
-                # Enhanced visual effects for the animation frame
+                # Enhanced visual effects with changing colors and intensifying glow
+                glow_color = "#f1c40f"  # Default gold
+                if progress < 0.3:
+                    glow_color = "#3498db"  # Blue for early stage
+                elif progress < 0.6:
+                    glow_color = "#f39c12"  # Orange for middle stage
+                elif progress < 0.85:
+                    glow_color = "#e74c3c"  # Red for late stage
+                else:
+                    glow_color = "#f1c40f"  # Gold for final stage
+                
+                # Intensify effects as we progress
+                glow_size = 5 + int(progress * 25)
+                spin_speed = 3 - (progress * 2.5)  # Slows down from 3s to 0.5s duration
+                
+                # Dynamic animation container
                 st.markdown(f'''
                 <div class="spinning-animation" style="
-                    animation: glow {0.5 + progress}s infinite alternate;
-                    box-shadow: 0 0 {5 + int(progress * 15)}px gold;
+                    animation: glow {spin_speed}s infinite alternate;
+                    box-shadow: 0 0 {glow_size}px {glow_color};
+                    background: linear-gradient(45deg, #0f0c29, #302b63, #24243e);
                     transition: all 0.3s ease;
-                    padding: 10px;
+                    padding: 15px;
                     border-radius: 10px;
+                    border: 2px solid {glow_color};
+                    margin: 10px auto;
+                    max-width: 350px;
                 ">
+                <div style="position:relative;overflow:hidden;">
+                    <div style="position:absolute;top:0;left:0;right:0;height:30px;
+                        background:linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
+                        z-index:1;"></div>
                 ''', unsafe_allow_html=True)
                 
                 # Render animation frame
                 st.markdown(_render_grid(animation_grid), unsafe_allow_html=True)
-                st.markdown('</div>', unsafe_allow_html=True)
                 
-                if progress > 0.8:
-                    status_message.markdown('<h3 style="text-align:center;color:#e74c3c;">🎰 ALMOST THERE... 🎰</h3>', unsafe_allow_html=True)
-                elif progress > 0.5:
-                    status_message.markdown('<h3 style="text-align:center;color:#f39c12;">🎰 SPINNING... 🎰</h3>', unsafe_allow_html=True)
+                # Bottom shadow effect
+                st.markdown('''
+                    <div style="position:absolute;bottom:0;left:0;right:0;height:30px;
+                        background:linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+                        z-index:1;"></div>
+                </div>
+                </div>
+                ''', unsafe_allow_html=True)
+                
+                # Dynamic status messages with emoji animations
+                if progress > 0.85:
+                    status_message.markdown('<h3 style="text-align:center;color:#e74c3c;animation:pulse 0.5s infinite;">🎰 ALMOST THERE! 🎰</h3>', unsafe_allow_html=True)
+                elif progress > 0.6:
+                    status_message.markdown('<h3 style="text-align:center;color:#f39c12;animation:flash 1s infinite;">🎰 SPINNING... 🎰</h3>', unsafe_allow_html=True)
+                elif progress > 0.3:
+                    status_message.markdown('<h3 style="text-align:center;color:#f1c40f;">🎰 SPINNING... 🎰</h3>', unsafe_allow_html=True)
                 else:
                     status_message.markdown('<h3 style="text-align:center;color:#3498db;">🎰 SPINNING... 🎰</h3>', unsafe_allow_html=True)
                     
@@ -585,12 +659,44 @@ def play_slots(user_state, lines, ap_per_line, jackpot, house, st):
             frame_count += 1
             time.sleep(delay)
         
-        # Animation is complete - show final result
+        # Animation is complete - show final result with celebratory effects
         progress_bar.progress(1.0)
-        status_message.markdown('<h3 style="text-align:center;color:#2ecc71;">🎰 SPIN COMPLETE! 🎰</h3>', unsafe_allow_html=True)
         
-        # Clear the progress bar after a brief pause
-        time.sleep(0.5)
+        # Create a celebratory completion message with animations
+        status_message.markdown('''
+        <h3 style="text-align:center;color:#2ecc71;animation:pulse 0.8s infinite alternate;">
+            🎰 SPIN COMPLETE! 🎰
+        </h3>
+        <style>
+        @keyframes celebrate {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        @keyframes rainbow {
+            0% { color: red; }
+            14% { color: orange; }
+            28% { color: yellow; }
+            42% { color: green; }
+            57% { color: blue; }
+            71% { color: indigo; }
+            85% { color: violet; }
+            100% { color: red; }
+        }
+        .celebration {
+            animation: celebrate 0.8s infinite, rainbow 2s infinite;
+            font-weight: bold;
+            text-align: center;
+            font-size: 1.2em;
+            margin: 10px 0;
+            text-shadow: 0 0 5px white;
+        }
+        </style>
+        ''', unsafe_allow_html=True)
+        
+        # Wait for visual impact
+        time.sleep(0.8)
+        
+        # Clear the progress bar
         progress_bar.empty()
         status_message.empty()
 
