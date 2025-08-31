@@ -2,11 +2,19 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Install required packages directly
+# Install git and other dependencies
+RUN apt-get update && \
+    apt-get install -y git && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
 RUN pip install --no-cache-dir streamlit>=1.33 streamlit-autorefresh>=1.0.1
 
-# Copy the application files
-# No need for requirements.txt as we've installed dependencies directly
+# Clone the repository (will be used if not using volume mount)
+RUN git clone https://github.com/Mikerstrong/7secs2.git /tmp/app && \
+    cp -r /tmp/app/* /app/ && \
+    rm -rf /tmp/app
 COPY . .
 
 # Expose the port Streamlit runs on

@@ -2,18 +2,18 @@ version: '3.8'
 
 services:
   casino-app:
-    build: .
+    image: python:3.10-slim
     container_name: 7secs2-casino
     working_dir: /app
-    command: >
-      bash -c "pip install --no-cache-dir streamlit>=1.33 streamlit-autorefresh>=1.0.1 &&
-               python -m streamlit run streamlit_app/app.py --server.port=8501 --server.address=0.0.0.0"
-    volumes:
-      - type: bind
-        source: .
-        target: /app
+    # No volume mount - we copy the files directly in the command
     ports:
       - "${EXTERNAL_PORT:-7777}:${INTERNAL_PORT:-8501}"
+    command: >
+      bash -c "apt-get update &&
+               apt-get install -y git &&
+               git clone https://github.com/Mikerstrong/7secs2.git /app &&
+               pip install --no-cache-dir streamlit>=1.33 streamlit-autorefresh>=1.0.1 &&
+               python -m streamlit run /app/streamlit_app/app.py --server.port=8501 --server.address=0.0.0.0"
     environment:
       - STREAMLIT_SERVER_ENABLE_CORS=false
       - STREAMLIT_SERVER_HEADLESS=true

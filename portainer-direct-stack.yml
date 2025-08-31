@@ -1,0 +1,25 @@
+# Direct Portainer Stack Deployment
+#
+# Copy and paste this content directly into the Portainer Stack web editor
+# to avoid any file path or volume mount issues.
+
+version: '3.8'
+
+services:
+  casino-app:
+    image: python:3.10-slim
+    container_name: 7secs2-casino
+    command: >
+      bash -c "apt-get update &&
+               apt-get install -y git &&
+               git clone https://github.com/Mikerstrong/7secs2.git /app &&
+               pip install --no-cache-dir streamlit>=1.33 streamlit-autorefresh>=1.0.1 &&
+               cd /app &&
+               python -m streamlit run streamlit_app/app.py --server.port=8501 --server.address=0.0.0.0"
+    ports:
+      - "7777:8501"
+    environment:
+      - STREAMLIT_SERVER_ENABLE_CORS=false
+      - STREAMLIT_SERVER_HEADLESS=true
+      - STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
+    restart: unless-stopped

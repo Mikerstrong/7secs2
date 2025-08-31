@@ -1,16 +1,27 @@
 # Deploying 7secs2 Casino with Portainer
 
-This guide explains how to deploy the 7secs2 Casino application using Portainer and Docker Compose.
+This guide explains how to deploy the 7secs2 Casino application using Portainer.
 
 ## Prerequisites
 
 1. Docker installed on your server
 2. Portainer installed and running
-3. Access to this GitHub repository: https://github.com/Mikerstrong/7secs2.git
 
 ## Deployment Instructions
 
-### Option 1: Using Portainer Stack with Git Repository
+### Option 1: Using Direct Stack Deployment (Recommended)
+
+1. Open your Portainer dashboard
+2. Navigate to Stacks
+3. Click "Add stack"
+4. Fill in the following information:
+   - Name: 7secs2-casino
+   - Build method: Web editor
+5. Copy the contents from the `portainer-direct-stack.yml` file from the repository and paste it into the web editor
+6. Click "Deploy the stack"
+7. Once deployed, access the application at http://YOUR_SERVER_IP:7777
+
+### Option 2: Using Portainer Stack with Git Repository
 
 1. Open your Portainer dashboard
 2. Navigate to Stacks
@@ -20,11 +31,11 @@ This guide explains how to deploy the 7secs2 Casino application using Portainer 
    - Build method: Repository
    - Repository URL: https://github.com/Mikerstrong/7secs2.git
    - Repository reference: main
-   - Compose file path: docker-compose.yml
+   - Compose file path: portainer-direct-stack.yml
 5. Click "Deploy the stack"
 6. Once deployed, access the application at http://YOUR_SERVER_IP:7777
 
-### Option 2: Manual Deployment
+### Option 3: Manual Deployment
 
 1. Clone the repository:
    ```
@@ -34,7 +45,11 @@ This guide explains how to deploy the 7secs2 Casino application using Portainer 
    ```
    cd 7secs2
    ```
-3. Run Docker Compose:
+3. Run the Docker script:
+   ```
+   bash run_docker.sh
+   ```
+   or with Docker Compose:
    ```
    docker-compose up -d
    ```
